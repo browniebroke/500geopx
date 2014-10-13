@@ -67,13 +67,3 @@ body {
   color: #999; /* IE8 proofing */
   color: rgba(255,255,255,.5);
 }
-
-#map-canvas{
-  margin: auto;
-  height: 400px;
-  width: 600px;
-}
-
-#images-canvas ul li{
-  margin-top: 10px;
-}

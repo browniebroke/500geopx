@@ -16,8 +16,9 @@
     <div class="site-wrapper">
 
       <div class="site-wrapper-inner">
+        <div id="map-canvas"></div>
 
-        <div class="cover-container">
+        <div class="cover-container" id="home-content">
 
           <div class="masthead clearfix">
             <div class="inner">
@@ -27,16 +28,15 @@
 
           <div class="inner cover">
             <h1 class="cover-heading">Find beautiful pictures around you.</h1>
+            <p class="lead">Selects the most popular images from 500px, and arrange them on a map, according to their location.</p>
             <p class="lead">
               <p class="btn btn-lg btn-default" onClick="getLocation(initialize)" id="around-me-btn">Let's Go!</p>
-              <!--<a href="#" class="btn btn-lg btn-default">At given location</a>-->
             </p>
             <div id="spinner">
               <i class="fa fa-spinner fa-spin fa-2x"></i>
             </div>
             <div id="content-canvas">
               <p>Drag the map to see pictures around other area</p>
-              <div id="map-canvas"></div>
               <div id="images-canvas">
                 <ul class="list-inline">
                 </ul>

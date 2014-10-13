@@ -10,81 +10,92 @@ function measure(lat1, lon1, lat2, lon2){  // generally used geo measurement fun
   return d; // kilometers
 }
 
-function get500pxImages(latitude, longitude, radius) {
-  //Build query to 500px API
-  var root_url = "https://api.500px.com/v1";
-  var consumer_key = "LmytzAEy3Gxymxw9R1kSURBbJw71FUu2QFLZKyfo";
-  var query = root_url + "/photos/search"
-  var parameters = {
-    'consumer_key': consumer_key,
-    'geo': ""+latitude+","+longitude+","+radius+"km",
-    'sort': 'favorites_count',
-    'rrp': 10,
-  }
-  query += "?" + $.param(parameters);
+function MapOverlay(map){
+  //Main object, intialise the map, retrive from 500px
+  this.map = map;
+  this.infoWindows = [];
 
-  //Run the query and retrieve results
-  $.getJSON(query, function(result){
-    var imgCanvas = $("#images-canvas");
-    var ulist = imgCanvas.find("ul");
-    ulist.empty();
-    imgCanvas.hide();
-    $.each( result.photos, function( index, photo ){
-      var photoLi = $('<li></li>');
-      var photoLink = $('<a href="https://500px.com'+photo.url+'" target="_blank"></a>');
-      photoLink.append($('<img src="'+photo.image_url+'"/>'));
-      photoLi.append(photoLink);
-      ulist.append(photoLi);
+  this.get500pxImages = function(latitude, longitude, radius) {
+    //Build query to 500px API
+    var root_url = "https://api.500px.com/v1";
+    var consumer_key = "LmytzAEy3Gxymxw9R1kSURBbJw71FUu2QFLZKyfo";
+    var query = root_url + "/photos/search"
+    var parameters = {
+      'consumer_key': consumer_key,
+      'geo': ""+latitude+","+longitude+","+radius+"km",
+      'sort': 'highest_rating',//'favorites_count',
+      'rpp': 10,
+    }
+    query += "?" + $.param(parameters);
+
+    var theMap = this.map;
+    var theInfoWindows = this.infoWindows;
+
+    //Run the query and retrieve results
+    $.getJSON(query, function(result){
+      //First remove & close old ones
+      $.each( theInfoWindows, function(index, infoW){
+        theInfoWindows.pop().close();
+      });
+      $.each( result.photos, function( index, photo ){
+        var contentString = '<a href="https://500px.com'+photo.url+'" target="_blank">'+
+                            '<img src="'+photo.image_url+'"/>'+
+                            '</a>';
+        theInfoWindows[theInfoWindows.length] = new google.maps.InfoWindow({
+          content: contentString,
+          position: new google.maps.LatLng(photo.latitude, photo.longitude)
+        });
+        theInfoWindows[theInfoWindows.length-1].open(theMap);
+      });
+      console.log(theInfoWindows);
+    }); //getJSON
+  }; // get500pxImages
+
+  this.getImagesFromMap = function(){
+    //Get map features: location and radius
+    var position = this.map.getCenter()
+    var northEast = this.map.getBounds().getNorthEast();
+    var radius = measure(position.lat(), position.lng(), northEast.lat(), northEast.lng());
+    //Get pictures from 500px
+    this.get500pxImages(position.lat(), position.lng(), radius/2);
+  }; //getImagesFromMap
+
+  this.initialise = function(position){
+    //Init the map
+    var latitude = position.coords.latitude;
+    var longitude = position.coords.longitude;
+    var mapOptions = {
+      zoom: 13,
+      center: new google.maps.LatLng(latitude, longitude)
+    };
+
+    this.map = new google.maps.Map(document.getElementById('map-canvas'),
+        mapOptions);
+
+    var overlay = this;
+    //Callback when the map is moved
+    google.maps.event.addListener(this.map, 'dragend', function() {
+      overlay.getImagesFromMap();
     });
-    imgCanvas.fadeIn();
-  });
-}
 
-function getImagesFromMap(map){
-  //Get map features: location and radius
-  var position = map.getCenter()
-  var northEast = map.getBounds().getNorthEast();
-  var radius = measure(position.lat(), position.lng(), northEast.lat(), northEast.lng());
-  //Get pictures from 500px
-  get500pxImages(position.lat(), position.lng(), radius/2);
+    //Listener when the map zoom is changed
+    google.maps.event.addListener(this.map, 'zoom_changed', function() {
+      overlay.getImagesFromMap();
+    });
+
+    this.get500pxImages(latitude, longitude, 2);
+  };// initialise
 }
 
 function initialize(position) {
-  //Init the map
-  var latitude = position.coords.latitude;
-  var longitude = position.coords.longitude;
-  var mapOptions = {
-    zoom: 13,
-    center: new google.maps.LatLng(latitude, longitude)
-  };
+  var overlayed = new MapOverlay();
+  overlayed.initialise(position);
 
-  $("#map-canvas").height('400px');
-  $("#map-canvas").width('600px');
-
-  var map = new google.maps.Map(document.getElementById('map-canvas'),
-      mapOptions);
-
-  var marker = new google.maps.Marker({
-    position: map.getCenter(),
-    map: map,
-    title: 'Your location'
-  });
-
-  //Callback when the map is moved
-  google.maps.event.addListener(map, 'dragend', function() {
-    getImagesFromMap(map);
-  });
-
-  //Listener when the map zoom is changed
-  google.maps.event.addListener(map, 'zoom_changed', function() {
-      getImagesFromMap(map);
-  });
-
-  $('#spinner').hide();
-  $("#content-canvas").fadeIn();
-
-  //Load the first set of images
-  get500pxImages(latitude, longitude, 2);
+  $('#home-content').remove();
+  var map_canvas = $("#map-canvas");
+  map_canvas.height(''+screen.height+'px');
+  map_canvas.width(''+screen.width+'px');
+  map_canvas.fadeIn();
 }
 
 function getLocation(func) {
