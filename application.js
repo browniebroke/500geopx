@@ -40,15 +40,13 @@ function get500pxImages(latitude, longitude, radius) {
   });
 }
 
-function getLocation(func) {
-  $('#around-me-btn').hide();
-  $("#content-canvas").hide();
-  $('#spinner').show();
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(func);
-  } else {
-    $("#map-canvas").text("Geolocation is not supported by this browser.");
-  }
+function getImagesFromMap(map){
+  //Get map features: location and radius
+  var position = map.getCenter()
+  var northEast = map.getBounds().getNorthEast();
+  var radius = measure(position.lat(), position.lng(), northEast.lat(), northEast.lng());
+  //Get pictures from 500px
+  get500pxImages(position.lat(), position.lng(), radius/2);
 }
 
 function initialize(position) {
@@ -72,28 +70,33 @@ function initialize(position) {
     title: 'Your location'
   });
 
+  //Callback when the map is moved
   google.maps.event.addListener(map, 'dragend', function() {
-    //Get map features: location and radius
-    var position = map.getCenter()
-    var northEast = map.getBounds().getNorthEast();
-    var radius = measure(position.lat(), position.lng(), northEast.lat(), northEast.lng());
-    //Get pictures from 500px
-    get500pxImages(position.lat(), position.lng(), radius);
+    getImagesFromMap(map);
   });
 
+  //Listener when the map zoom is changed
   google.maps.event.addListener(map, 'zoom_changed', function() {
-    //Get map features: location and radius
-    var position = map.getCenter()
-    var northEast = map.getBounds().getNorthEast();
-    var radius = measure(position.lat(), position.lng(), northEast.lat(), northEast.lng());
-    //Get pictures from 500px
-    get500pxImages(position.lat(), position.lng(), radius/2);
+      getImagesFromMap(map);
   });
 
   $('#spinner').hide();
   $("#content-canvas").fadeIn();
 
+  //Load the first set of images
   get500pxImages(latitude, longitude, 2);
+}
+
+function getLocation(func) {
+  //Entry point called from the HTML
+  $('#around-me-btn').hide();
+  $("#content-canvas").hide();
+  $('#spinner').show();
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(func);
+  } else {
+    $("#map-canvas").text("Geolocation is not supported by this browser.");
+  }
 }
 
 $(document).ready(function(){
