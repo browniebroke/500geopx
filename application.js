@@ -27,6 +27,7 @@ function MapOverlay(map){
       'rpp': 10,
     }
     query += "?" + $.param(parameters);
+    console.log(query);
 
     var theMap = this.map;
     var theInfoWindows = this.infoWindows;
@@ -62,6 +63,7 @@ function MapOverlay(map){
 
   this.initialise = function(position){
     //Init the map
+    console.log("Starting init of the map");
     var latitude = position.coords.latitude;
     var longitude = position.coords.longitude;
     var mapOptions = {
@@ -88,18 +90,26 @@ function MapOverlay(map){
 }
 
 function initialize(position) {
+  console.log("Starting initialise");
   var overlayed = new MapOverlay();
   overlayed.initialise(position);
 
   $('#home-content').remove();
+  var useragent = navigator.userAgent;
   var map_canvas = $("#map-canvas");
-  map_canvas.height(''+screen.height+'px');
-  map_canvas.width(''+screen.width+'px');
+  if (useragent.indexOf('iPhone') != -1 || useragent.indexOf('Android') != -1 ) {
+    map_canvas.width('100%');
+    map_canvas.height('100%');
+  } else {
+    map_canvas.height(''+screen.height+'px');
+    map_canvas.width(''+screen.width+'px');
+  }
   map_canvas.fadeIn();
 }
 
 function getLocation(func) {
   //Entry point called from the HTML
+  console.log("Starting...");
   $('#around-me-btn').hide();
   $("#content-canvas").hide();
   $('#spinner').show();
